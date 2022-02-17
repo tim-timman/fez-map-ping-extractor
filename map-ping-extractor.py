@@ -8,7 +8,8 @@ from scipy import signal
 import matplotlib.pyplot as plt
 
 
-def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize: bool = False):
+def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize: bool = False,
+               background_threshold: float = None, partition_threshold: float = None):
     print("Loading file...", file=sys.stderr)
     with sf.SoundFile(file, "r", ) as f:
         samplerate = f.samplerate
@@ -24,19 +25,26 @@ def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize:
         duration = data.size / samplerate
 
     print("Filtering...", file=sys.stderr)
-    filtered_data = highpass_filter(data, 1500, samplerate)
+    filtered_data = butter_filter(data, 1500, samplerate, btype="highpass")
     print("Normalizing...", file=sys.stderr)
     # normalize to -1 to 1, to more easily extract peaks
     scale_factor = 1. / max(abs(filtered_data.min()), filtered_data.max())
     normalized = filtered_data * scale_factor
 
+    if background_threshold is None:
+        background_threshold = butter_filter(normalized, 1500, samplerate, btype="lowpass").max()
+
     print("Detecting peaks...", file=sys.stderr)
-    peaks, _ = signal.find_peaks(normalized, distance=samplerate * 2, threshold=(0.15, None))
+    peaks, _ = signal.find_peaks(normalized,
+                                 distance=samplerate * 2,
+                                 threshold=(background_threshold, None))
 
     peak_values = normalized[peaks]
-    threshold = (peak_values.max() - peak_values.min()) / 2 + peak_values.min()
 
-    partitioned = peak_values > threshold
+    if partition_threshold is None:
+        partition_threshold = (peak_values.max() - peak_values.min()) / 2 + peak_values.min()
+
+    partitioned = peak_values > partition_threshold
     # do a sanity check on the signals
     pings = peak_values[partitioned]
     ping_variance = pings.max() - pings.min()
@@ -51,9 +59,11 @@ def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize:
               "Could be a bad recording. Please double check with a visualization.",
               file=sys.stderr)
     print("Analysis metrics:",
-          f"        Ping variance: {ping_variance:.3f}",
-          f"       Chime variance: {chime_variance:.3f}",
-          f"  Ping-chime distance: {ping_chime_dist:.3f}",
+          f"  Background threshold: {background_threshold:.3f}",
+          f"   Partition threshold: {partition_threshold:.3f}",
+          f"         Ping variance: {ping_variance:.3f}",
+          f"        Chime variance: {chime_variance:.3f}",
+          f"   Ping-chime distance: {ping_chime_dist:.3f}",
           sep="\n", file=sys.stderr)
     bitstream = partitioned * 1
 
@@ -68,16 +78,17 @@ def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize:
         ax1.set_ylabel("Raw Signal")
 
         ax2.plot(second_indices, normalized)
-        ax2.plot(second_indices[peaks], normalized[peaks], "x")
-        ax2.plot(second_indices, np.full_like(normalized, threshold), "--", color="gray")
+        ax2.plot(second_indices[peaks], peak_values, "x")
+        ax2.hlines((partition_threshold, background_threshold),
+                   second_indices[0], second_indices[-1], ("gray", "black"), "--")
         ax2.set_xlabel("Seconds")
         ax2.set_ylabel("Filtered Signal")
 
         plt.show()
 
 
-def highpass_filter(sig, cutoff, fs, order=5):
-    sos = signal.butter(order, cutoff, fs=fs, btype="highpass", output="sos")
+def butter_filter(sig, cutoff, fs, order=5, btype="highpass"):
+    sos = signal.butter(order, cutoff, fs=fs, btype=btype, output="sos")
     return signal.sosfilt(sos, sig)
 
 
@@ -90,12 +101,20 @@ def main():
                         help="offset in seconds into the file to start parsing")
     parser.add_argument("--duration", type=float, default=-1.,
                         help="for how many seconds to parse")
+    parser.add_argument("--background", type=float, default=None,
+                        help="manually set the background threshold value above "
+                             "where peaks should be found (DEFAULT: determined automatically)")
+    parser.add_argument("--partition", type=float, default=None,
+                        help="manually set the partition value threshold to "
+                             "separate ping and chime peaks (DEFAULT: determined automatically)")
 
     args = parser.parse_args()
     if not args.file.exists():
         parser.error(f"file: {args.file} doesn't exist")
 
-    parse_ping(args.file, args.offset, args.duration, args.visualize)
+    parse_ping(args.file, args.offset, args.duration, args.visualize,
+               background_threshold=args.background,
+               partition_threshold=args.partition)
 
 
 if __name__ == "__main__":

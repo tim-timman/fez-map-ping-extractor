@@ -27,14 +27,19 @@ Requires python 3 (only tested with 3.9)
    > *See usage*
    > ```
    > $ python map-ping-extractor.py --help
-   > usage: map-ping-extractor.py [-h] [--visualize] [--offset OFFSET] [--duration DURATION] file
+   > usage: map-ping-extractor.py [-h] [--visualize] [--offset OFFSET] [--duration DURATION] [--background BACKGROUND] [--partition PARTITION]
+   >                              file
    >
    > positional arguments:
-   >   file                 audio file of map ping to analyze
+   >   file                  audio file of map ping to analyze
    >
    > optional arguments:
-   >   -h, --help           show this help message and exit
-   >   --visualize          show the plot (WARNING! Slow for big files)
-   >   --offset OFFSET      offset in seconds into the file to start parsing
-   >   --duration DURATION  for how many seconds to parse
+   >   -h, --help            show this help message and exit
+   >   --visualize           show the plot (WARNING! Slow for big files)
+   >   --offset OFFSET       offset in seconds into the file to start parsing
+   >   --duration DURATION   for how many seconds to parse
+   >   --background BACKGROUND
+   >                         manually set the background threshold value above where peaks should be found (DEFAULT: determined automatically)
+   >   --partition PARTITION
+   >                         manually set the partition value threshold to separate ping and chime peaks (DEFAULT: determined automatically)
    > ```
