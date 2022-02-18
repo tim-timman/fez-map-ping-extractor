@@ -72,7 +72,7 @@ def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize:
           sep="\n", file=sys.stderr)
     bitstream = partitioned * 1
 
-    print("\nParsed output:", file=sys.stderr)
+    print("\nExtracted output:", file=sys.stderr)
     print("".join(str(x) for x in bitstream), "\n")
 
     if visualize:
