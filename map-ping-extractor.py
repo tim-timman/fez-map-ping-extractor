@@ -35,8 +35,13 @@ def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize:
         background_threshold = butter_filter(normalized, 1500, samplerate, btype="lowpass").max()
 
     print("Detecting peaks...", file=sys.stderr)
+    # chimes are 2.2 seconds apart from each other, so only find the highest peak
+    # at some percentage of that to allow some variation in case of noise
+    # (ex. if recorded with mic) and still detect the peaks correctly
+    chime_frame_distance = (samplerate * 2.2) * 0.8
     peaks, _ = signal.find_peaks(normalized,
-                                 distance=samplerate * 2,
+                                 # allow some
+                                 distance=chime_frame_distance,
                                  threshold=(background_threshold, None))
 
     peak_values = normalized[peaks]
@@ -72,17 +77,16 @@ def parse_ping(file: Path, offset: float = 0., duration: float = -1., visualize:
 
     if visualize:
         print("Loading visualization. NOTE! This is CPU and memory intensive for big files.", file=sys.stderr)
-        fig, (ax1, ax2) = plt.subplots(2, 1)
+        fig, ax = plt.subplots(1, 1)
         second_indices = np.linspace(offset, offset + duration, data.size)
-        ax1.plot(second_indices, data)
-        ax1.set_ylabel("Raw Signal")
 
-        ax2.plot(second_indices, normalized)
-        ax2.plot(second_indices[peaks], peak_values, "x")
-        ax2.hlines((partition_threshold, background_threshold),
-                   second_indices[0], second_indices[-1], ("gray", "black"), "--")
-        ax2.set_xlabel("Seconds")
-        ax2.set_ylabel("Filtered Signal")
+        ax.plot(second_indices, normalized)
+        ax.plot(second_indices[peaks], peak_values, "x")
+        ax.hlines((partition_threshold, background_threshold),
+                  second_indices[0], second_indices[-1], ("gray", "black"), "--")
+        ax.set_xlabel("Duration (seconds)")
+        ax.set_title("Filtered Signal")
+        ax.set_ylim(-1.2, 1.2)
 
         plt.show()
 
