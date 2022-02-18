@@ -144,3 +144,25 @@ Get it [here][source-audio].
 0000000000
 ```
 </details>
+
+
+## Analysis and conclusion
+
+I tried looking at the intervals between ones, but it was anything between 0 and
+108 chimes. I've been expecting 64 to be the biggest coherent unit (if there was one)
+due to the relevance in the game, but with that variability there would be no way of
+grouping (that I can see) where there's a lot of nothing.
+
+Thus far it seems random. It doesn't match up with any of my previous 15-20 min
+recordings. And if this was to be a message to decode, there should be some way
+of knowing when the message is over and repeated, which I can't find. Expecting
+that window to be more than the hour I've checked makes me think there isn't
+anything here. Oh, well.
+
+Also the point that [someone remembered][qa] at the map was added as a QA request.
+That along with the seeming lack of reference to the map within the game.
+
+[Reddit thread of all above.][reddit-thread]
+
+[qa]: https://www.reddit.com/r/Fez/comments/stls8z/comment/hxcxfa2/
+[reddit-thread]: https://www.reddit.com/r/Fez/comments/stls8z/ping_sound_in_room_map_monolith_relevance/
